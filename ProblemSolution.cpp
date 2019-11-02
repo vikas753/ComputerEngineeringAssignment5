@@ -20,7 +20,10 @@ using namespace std;
 typedef struct GraphNodeType
 {
   string NodeKey;
-  vector<double> lengthList;        // Array for Length from source to index of element
+  int inQueue;                      // Is the node in a Queue for algorithm
+  float distance;                   
+  int predecessorKeyIndex;           // Index of predecessor of node 
+  vector<float> lengthList;        // Array for Length from source to index of element
   vector<int> AdjacentNodeKeyList;  // Index in graph of elements
 } GraphNode_t;
 
@@ -58,7 +61,6 @@ void CreateGraphInputElements(ifstream& InputFileHandler)
     string source = tempContainerStorage[0];
     string destination = tempContainerStorage[1];
     float length = stof(tempContainerStorage[2]);
-    cout << source << destination << length << endl;
     int sourceElemIndex = SearchElementIndexInGraph(source);
     int destElemIndex   = SearchElementIndexInGraph(destination);
    
@@ -99,6 +101,111 @@ void DisplayGraph()
   }
 }
 
+#define INFINITY_SENTINEL 0x5A5A5A5A
+#define INQUEUE_STATE     1
+#define OUTQUEUE_STATE    0
+
+
+// Checks whether it's distance from predecessor is lesser compared
+// to that calculated previously , if so then it resets the distance
+// and predecessor
+void relaxAPi(int sourceIdx , int DestIdx , float weight)
+{
+  if(GraphHeadNode[DestIdx].distance > GraphHeadNode[sourceIdx].distance + weight)
+  {
+    GraphHeadNode[DestIdx].distance = GraphHeadNode[sourceIdx].distance + weight;
+    GraphHeadNode[DestIdx].predecessorKeyIndex = sourceIdx;
+  }
+}
+
+// Returns the node index with minimum distance
+// returns -1 if no minimum index exists
+int GetMinKeyIndex()
+{
+  int Minimum = INFINITY_SENTINEL;
+  int MinKeyIndex = -1;
+
+  for(int i=0;i<GraphHeadNode.size();i++)
+  {
+    if(GraphHeadNode[i].inQueue == INQUEUE_STATE)
+    {
+      if(GraphHeadNode[i].distance < Minimum)
+      {
+        MinKeyIndex = i;
+      }
+    }   
+  }
+  return MinKeyIndex;
+}
+void initialize_source_node(int SourceNodeIdx);
+
+// APplies a dijkstra algorithm from sourceIdx and
+// stops abruptly once DestIdx is encountered . 
+
+float getShortestPath(int sourceIdx , int DestIdx)
+{
+  initialize_source_node(sourceIdx);
+  int MinKeyIdx = -1;
+  while((MinKeyIdx = GetMinKeyIndex()) != -1)
+  {
+    GraphHeadNode[MinKeyIdx].inQueue = OUTQUEUE_STATE;
+    if(MinKeyIdx == DestIdx)
+    {
+      return GraphHeadNode[MinKeyIdx].distance;   
+    }
+
+    for(int i=0;i<GraphHeadNode[MinKeyIdx].AdjacentNodeKeyList.size();i++)
+    {
+      relaxAPi(MinKeyIdx , GraphHeadNode[MinKeyIdx].AdjacentNodeKeyList[i] , GraphHeadNode[MinKeyIdx].lengthList[i]); 
+    }
+  }
+  return -1;
+}
+
+// Initialize a source node with a distance of 0 and
+// other nodes at a distance of infinity
+void initialize_source_node(int SourceNodeIdx)
+{
+  GraphHeadNode[SourceNodeIdx].distance = 0;
+  GraphHeadNode[SourceNodeIdx].predecessorKeyIndex = -1;
+  GraphHeadNode[SourceNodeIdx].inQueue = INQUEUE_STATE;
+
+  for(int i=0;i<GraphHeadNode.size();i++)
+  {
+    if(i!= SourceNodeIdx)
+    {
+      GraphHeadNode[i].distance = INFINITY_SENTINEL; 
+      GraphHeadNode[i].inQueue  = INQUEUE_STATE;
+    }
+  }
+}
+
+float getShortestPathString(string Source , string Destination)
+{
+  int sourceElemIndex = SearchElementIndexInGraph(Source);
+  int destElemIndex   = SearchElementIndexInGraph(Destination);
+  if((sourceElemIndex == -1) || (destElemIndex == -1))
+  {
+    return -1;
+  }
+  return getShortestPath(sourceElemIndex,destElemIndex);
+}
+
+void PrintShortestPath(string Source , string Dest)
+{
+  int SourceIdx =  SearchElementIndexInGraph(Source);
+  int DestIdx   =  SearchElementIndexInGraph(Dest);
+ 
+  int tempPredecessorKeyIdx = GraphHeadNode[DestIdx].predecessorKeyIndex; 
+  while(tempPredecessorKeyIdx != SourceIdx)
+  {
+    cout << GraphHeadNode[tempPredecessorKeyIdx].NodeKey << "->" ; 
+    tempPredecessorKeyIdx = GraphHeadNode[tempPredecessorKeyIdx].predecessorKeyIndex; 
+  }
+  cout << endl;
+  return;
+}
+
 int main()
 {
   ifstream fileReader("InputElementsDB.txt");
@@ -112,5 +219,24 @@ int main()
 
   CreateGraphInputElements(fileReader);
   DisplayGraph();
+  string source , destination;
+  
+  cout << " Enter Source element for shortest path calulations " << endl;
+  cin >> source;
+  cout << " Enter Destination element for shortest path calulations " << endl;
+  cin >> destination;
+  int ShortestPathDistance = -1;
+  if((ShortestPathDistance = getShortestPathString(source,destination)) != -1)
+  {
+    cout << " Shortest Path : " << endl;
+    PrintShortestPath(source,destination);
+    cout << " Shortest Path Distance between source : " << source << " and destination : " << destination << " is : " << ShortestPathDistance << endl;
+  }
+  else
+  {
+    cout << " Error ! No shortest path found " << endl;
+    exit(1);
+  }
+
   return 0;
 }
