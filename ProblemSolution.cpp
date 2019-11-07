@@ -195,14 +195,18 @@ void PrintShortestPath(string Source , string Dest)
 {
   int SourceIdx =  SearchElementIndexInGraph(Source);
   int DestIdx   =  SearchElementIndexInGraph(Dest);
+
+  cout << Dest << "<-";
  
   int tempPredecessorKeyIdx = GraphHeadNode[DestIdx].predecessorKeyIndex; 
   while(tempPredecessorKeyIdx != SourceIdx)
   {
-    cout << GraphHeadNode[tempPredecessorKeyIdx].NodeKey << "->" ; 
+    cout << GraphHeadNode[tempPredecessorKeyIdx].NodeKey << "<-" ; 
     tempPredecessorKeyIdx = GraphHeadNode[tempPredecessorKeyIdx].predecessorKeyIndex; 
   }
-  cout << endl;
+
+  cout << Source << endl;
+
   return;
 }
 
@@ -225,7 +229,7 @@ int main()
   cin >> source;
   cout << " Enter Destination element for shortest path calulations " << endl;
   cin >> destination;
-  int ShortestPathDistance = -1;
+  float ShortestPathDistance = -1.0;
   if((ShortestPathDistance = getShortestPathString(source,destination)) != -1)
   {
     cout << " Shortest Path : " << endl;
